@@ -60,11 +60,13 @@ public class Author {
 
     @Override
     public String toString() {
-        return "Author{" +
-                "name='" + name + '\'' +
-                ", birthDate=" + birthDate +
-                ", deathDate=" + deathDate +
-                ", books=" + books +
-                '}';
+        return String.format("""
+                ------ AUTHOR ------
+                Name: %s
+                Birth date: %d
+                Death date: %d
+                Books: %s
+                --------------------
+                """, name, birthDate, deathDate, books.stream().map(Book::getTitle).toList());
     }
 }

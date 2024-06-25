@@ -58,11 +58,13 @@ public class Book {
 
     @Override
     public String toString() {
-        return "Book{" +
-                "title='" + title + '\'' +
-                ", author=" + author.getName() +
-                ", language='" + language + '\'' +
-                ", downloads=" + downloads +
-                '}';
+        return String.format("""
+                ------ BOOK ------
+                Title: %s
+                Author: %s
+                Language: %s
+                Downloads: %d
+                ------------------
+                """, title, author.getName(), language, downloads);
     }
 }

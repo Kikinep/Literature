@@ -1,5 +1,6 @@
 package com.kikinep.literature.main;
 
+import com.kikinep.literature.model.Author;
 import com.kikinep.literature.model.Book;
 import com.kikinep.literature.model.BookData;
 import com.kikinep.literature.model.SearchResults;
@@ -8,6 +9,8 @@ import com.kikinep.literature.repository.BookRepository;
 import com.kikinep.literature.service.APIRequest;
 import com.kikinep.literature.service.DataMapper;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
@@ -29,11 +32,11 @@ public class Main {
         String menu = """
                 What would you like to do?
                 
-                1 - Register new book
-                2 - Display all books
-                3 - Display all authors
-                4 - Display authors alive within a certain time frame
-                5 - Display books by language
+                1 - Add new book to collection
+                2 - Display books
+                3 - Display authors
+                4 - Display authors alive in a certain year
+                5 - Display books in a certain language
                 
                 0 - Exit application
                 """;
@@ -68,7 +71,7 @@ public class Main {
     }
 
     private void addBook() {
-        System.out.println("Enter the title of the book:");
+        System.out.println("Input the book's title and/or author:");
         String title = scanner.nextLine();
 
         String json = request.getData(BASE_URL + title.replace(" ", "%20"));
@@ -77,24 +80,68 @@ public class Main {
         if (searchedBook.isPresent()) {
             Book book = new Book(searchedBook.get());
             System.out.println(book);
-            authorRepository.save(book.getAuthor());
-            bookRepository.save(book);
+            System.out.println("Would you like to add this book to you collection? (Yes/No)");
+            String option = scanner.nextLine();
+            if(option.equalsIgnoreCase("Yes")) {
+                List<Book> books = new ArrayList<>();
+                books.add(book);
+                if(bookRepository.findByTitleEquals(book.getTitle()).isEmpty()){
+                    Optional<Author> searchedAuthor = authorRepository.findByNameEquals(book.getAuthor().getName());
+                    if(searchedAuthor.isPresent()) {
+                        Author author = searchedAuthor.get();
+                        author.setBooks(books);
+                        authorRepository.save(author);
+                    } else {
+                        book.getAuthor().setBooks(books);
+                        authorRepository.save(book.getAuthor());
+                    }
+                } else {
+                    System.out.println("Book title already registered!");
+                }
+            }
         } else {
             System.out.println("Book not found!");
         }
     }
 
     private void displayBooks() {
-        System.out.println(bookRepository.findAll());
+        List<Book> books = bookRepository.findAll();
+        if(!books.isEmpty()) {
+            books.forEach(System.out::println);
+        } else {
+            System.out.println("No authors found!");
+        }
     }
 
     private void displayAuthors() {
-        System.out.println(authorRepository.findAll());
+        List<Author> authors = authorRepository.findAll();
+        if(!authors.isEmpty()) {
+            authors.forEach(System.out::println);
+        } else {
+            System.out.println("No authors found!");
+        }
     }
 
     private void displayAuthorsAlive() {
+        System.out.println("Input year:");
+        Integer year = scanner.nextInt();
+        scanner.nextLine();
+        List<Author> authors = authorRepository.findByBirthDateLessThanEqualAndDeathDateGreaterThanEqual(year, year);
+        if(!authors.isEmpty()) {
+            authors.forEach(System.out::println);
+        } else {
+            System.out.println("No authors found!");
+        }
     }
 
     private void displayBooksByLanguage() {
+        System.out.println("Input the two-letter language code:");
+        String language = scanner.nextLine();
+        List<Book> books = bookRepository.findByLanguageEquals(language);
+        if(!books.isEmpty()) {
+            books.forEach(System.out::println);
+        } else {
+            System.out.println("No books found!");
+        }
     }
 }
