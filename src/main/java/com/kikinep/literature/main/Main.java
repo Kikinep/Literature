@@ -9,10 +9,8 @@ import com.kikinep.literature.repository.BookRepository;
 import com.kikinep.literature.service.APIRequest;
 import com.kikinep.literature.service.DataMapper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     private final Scanner scanner = new Scanner(System.in);
@@ -37,13 +35,20 @@ public class Main {
                 3 - Display authors
                 4 - Display authors alive in a certain year
                 5 - Display books in a certain language
+                6 - Display collection stats
+                7 - Display top 3 books by downloads
+                8 - Search author by name
                 
                 0 - Exit application
                 """;
         do {
             System.out.println(menu);
-            selection = scanner.nextInt();
-            scanner.nextLine();
+
+            try {
+                selection = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException _) {
+                selection = -1;
+            }
 
             switch (selection) {
                 case 1:
@@ -60,6 +65,12 @@ public class Main {
                     break;
                 case 5:
                     displayBooksByLanguage();
+                    break;
+                case 6:
+                    displayBooksStats();
+                    break;
+                case 7:
+                    displayTop3Books();
                     break;
                 case 0:
                     System.out.println("Exiting app...");
@@ -124,9 +135,16 @@ public class Main {
 
     private void displayAuthorsAlive() {
         System.out.println("Input year:");
-        Integer year = scanner.nextInt();
-        scanner.nextLine();
-        List<Author> authors = authorRepository.findByBirthDateLessThanEqualAndDeathDateGreaterThanEqual(year, year);
+        Integer year;
+
+        try {
+            year = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException _) {
+            System.out.println("Invalid year");
+            return;
+        }
+
+        List<Author> authors = authorRepository.findAuthorsByYearAlive(year);
         if(!authors.isEmpty()) {
             authors.forEach(System.out::println);
         } else {
@@ -139,9 +157,23 @@ public class Main {
         String language = scanner.nextLine();
         List<Book> books = bookRepository.findByLanguageEquals(language);
         if(!books.isEmpty()) {
+            System.out.println(books.size() + " books found!");
             books.forEach(System.out::println);
         } else {
             System.out.println("No books found!");
         }
+    }
+
+    private void displayBooksStats() {
+        IntSummaryStatistics stats = bookRepository.findAll().stream()
+                .collect(Collectors.summarizingInt(Book::getDownloads));
+
+        System.out.println("Average downloads: " + stats.getAverage());
+        System.out.println("Range of downloads: " + stats.getMin() + " - " + stats.getMax());
+        System.out.println("Books in collection: " + stats.getCount());
+    }
+
+    private void displayTop3Books() {
+        bookRepository.getTop3Books().forEach(System.out::println);
     }
 }
